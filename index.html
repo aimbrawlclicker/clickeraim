@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кликер v0.3</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial;
+    text-align: center;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+  }
+
+  h1 {
+    margin-top: 20px;
+    font-size: 6vw;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    margin: 15px auto;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  }
+
+  button {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.2s;
+  }
+
+  .click-btn {
+    background: #00c6ff;
+    color: white;
+    font-size: 22px;
+  }
+
+  .click-btn:active {
+    transform: scale(0.95);
+  }
+
+  .upgrade-btn {
+    background: #ffb347;
+    color: black;
+  }
+
+  .withdraw-btn {
+    background: #ff4b5c;
+    color: white;
+  }
+
+  .stat {
+    font-size: 18px;
+    margin: 8px 0;
+  }
+
+  #msg {
+    margin-top: 10px;
+    color: #ffd700;
+  }
+
+  /* 📱 телефон */
+  @media (max-width: 600px) {
+    h1 {
+      font-size: 8vw;
+    }
+
+    button {
+      font-size: 16px;
+      padding: 14px;
+    }
+
+    .stat {
+      font-size: 16px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<h1>💰 Кликер v0.3</h1>
+
+<div class="container">
+
+  <div class="card">
+    <button id="clickBtn" class="click-btn">КЛИК!</button>
+
+    <div class="stat">Баланс: <span id="balance">0</span></div>
+    <div class="stat">Сила клика: <span id="power">1</span></div>
+  </div>
+
+  <div class="card">
+    <h2>🛒 Магазин</h2>
+
+    <button id="upgradeBtn" class="upgrade-btn">
+      +1 к клику (Цена: <span id="price">10</span>)
+    </button>
+
+    <p id="msg"></p>
+  </div>
+
+  <div class="card">
+    <h2>💸 Вывод</h2>
+
+    <button class="withdraw-btn"
+      onclick="window.open('https://t.me/mzdurov', '_blank')">
+      Вывод в Telegram
+    </button>
+  </div>
+
+</div>
+
+<script>
+  let balance = Number(localStorage.getItem("balance")) || 0;
+  let power = Number(localStorage.getItem("power")) || 1;
+  let price = Number(localStorage.getItem("price")) || 10;
+
+  function update() {
+    document.getElementById("balance").innerText = balance;
+    document.getElementById("power").innerText = power;
+    document.getElementById("price").innerText = price;
+  }
+
+  function save() {
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("power", power);
+    localStorage.setItem("price", price);
+  }
+
+  update();
+
+  document.getElementById("clickBtn").onclick = () => {
+    balance += power;
+    save();
+    update();
+  };
+
+  document.getElementById("upgradeBtn").onclick = () => {
+    if (balance >= price) {
+      balance -= price;
+      power += 1;
+      price = Math.floor(price * 1.5);
+
+      save();
+      update();
+      document.getElementById("msg").innerText = "✔ Улучшение куплено!";
+    } else {
+      document.getElementById("msg").innerText = "❌ Не хватает монет!";
+    }
+  };
+</script>
+
+</body>
+</html>
