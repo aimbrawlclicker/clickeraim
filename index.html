@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker v0.6.2</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --primary: #00c6ff;
+  --bg: #0f172a;
+  --text: #ffffff;
+  --card-bg: #1e293b;
+  --input-bg: #0f172a;
+  --input-text: #ffffff;
+  --transition: all 0.3s ease;
+}
+
+/* СВЕТЛАЯ ТЕМА (Переменные) */
+.light {
+  --bg: #f1f5f9;
+  --text: #1e293b;
+  --card-bg: #ffffff;
+  --input-bg: #e2e8f0;
+  --input-text: #1e293b;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  transition: var(--transition);
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  align-items: center;
+  font-weight: 800;
+}
+.version {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+/* SIDEBAR (Настройки) */
+.sidebar {
+  position: fixed;
+  right: -280px;
+  top: 0;
+  width: 260px;
+  height: 100%;
+  background: var(--card-bg);
+  padding: 30px 20px;
+  transition: var(--transition);
+  z-index: 1000;
+  box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+}
+.sidebar.active { right: 0; }
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
+  margin: 10px 0 20px;
+  background: var(--input-bg);
+  color: var(--input-text);
+  box-sizing: border-box;
+}
+
+.saveBtn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* MAIN CARD */
+.card {
+  text-align: center;
+  margin: 20px;
+  padding: 20px;
+  background: var(--card-bg);
+  border-radius: 24px;
+  transition: var(--transition);
+}
+
+/* КЛИКЕР */
+.clickWrap { display: flex; justify-content: center; margin-top: 40px; }
+
+.clickBtn {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary) 0%, #0072ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 30px rgba(0, 198, 255, 0.3);
+  transition: transform 0.1s;
+  user-select: none;
+}
+.clickBtn:active { transform: scale(0.92); }
+
+/* ФИКС КАРТИНКИ */
+#crystalImg {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  background: transparent !important; /* Убираем фон */
+  border: none !important;
+  pointer-events: none;
+}
+
+/* НИЖНЯЯ ПАНЕЛЬ */
+.bottom-nav {
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 400px;
+  background: var(--card-bg);
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  border-radius: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 900;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 20px;
+}
+
+/* МОДАЛЬНЫЕ ОКНА */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  z-index: 2000;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 25px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 30px 30px 0 0;
+  text-align: center;
+  color: var(--text);
+}
+
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+
+.buy-btn {
+  background: var(--input-bg);
+  border: none;
+  padding: 15px;
+  border-radius: 16px;
+  color: var(--input-text);
+  cursor: pointer;
+}
+.buy-btn b { color: var(--primary); display: block; font-size: 1.1rem; }
+</style>
+</head>
+
+<body id="body">
+
+<div class="header">
+  <div>AimBrawl <span style="color:var(--primary)">Clicker</span><span class="version">v0.6.2</span></div>
+  <div style="cursor:pointer; font-size:24px;" onclick="toggleMenu()">☰</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <h3 id="sett_title">Настройки</h3>
+  
+  <label id="sett_id">Ваш ID</label>
+  <input id="playerId" placeholder="...">
+
+  <label id="sett_theme">Тема</label>
+  <select id="themeSel">
+    <option value="dark">Dark</option>
+    <option value="light">Light</option>
+  </select>
+
+  <label id="sett_lang">Язык</label>
+  <select id="langSel">
+    <option value="ru">Русский</option>
+    <option value="en">English</option>
+  </select>
+
+  <button class="saveBtn" onclick="saveSettings()" id="sett_save">Сохранить</button>
+</div>
+
+<div class="card">
+  <div style="opacity: 0.6; font-size: 0.9rem;">ID: <span id="showId">-</span></div>
+  <h2 id="ui_balance_text">Кристаллы: <span id="balance" style="color:var(--primary)">0</span></h2>
+  <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+    <div><span id="ui_power_text">Сила</span>: <b id="power">1</b></div>
+    <div><span id="ui_timer_label">Кулдаун</span>: <b>5с</b></div>
+  </div>
+  <p id="timer" style="color:#ef4444; font-weight:800; height:20px; margin-top:10px;"></p>
+</div>
+
+<div class="clickWrap">
+  <div class="clickBtn" id="clickBtn">
+    <img src="crystal.png" id="crystalImg" alt="💎">
+  </div>
+</div>
+
+<div class="modal" id="shopModal">
+  <div class="modal-content">
+    <h3 id="shop_title">Магазин</h3>
+    <div class="shop-grid">
+      <button class="buy-btn" onclick="buy(2, 50)"><b>+2</b> 💰 50</button>
+      <button class="buy-btn" onclick="buy(5, 150)"><b>+5</b> 💰 150</button>
+      <button class="buy-btn" onclick="buy(10, 500)"><b>+10</b> 💰 500</button>
+      <button class="buy-btn" onclick="buy(50, 2000)"><b>+50</b> 💰 2000</button>
+    </div>
+    <button onclick="closeModal('shopModal')" style="background:none; border:none; color:var(--primary); cursor:pointer;" id="shop_close">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal" id="withdrawModal">
+  <div class="modal-content">
+    <h3 id="w_title">Вывод</h3>
+    <p id="confirmText" style="margin-bottom: 20px;"></p>
+    <button class="saveBtn" onclick="createWithdraw()" id="w_btn">Создать заявку</button>
+    <br><br>
+    <button onclick="closeModal('withdrawModal')" style="background:none; border:none; color:var(--text); opacity:0.5; cursor:pointer;" id="w_cancel">Отмена</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item" onclick="openModal('shopModal')">
+    <span>🛒</span> <span id="nav_shop">Магазин</span>
+  </button>
+  <button class="nav-item" onclick="openModal('withdrawModal')">
+    <span>💸</span> <span id="nav_withdraw">Вывод</span>
+  </button>
+</div>
+
+<script>
+/* СЛОВАРЬ ПЕРЕВОДОВ */
+const langData = {
+  ru: {
+    sett_title: "Настройки", sett_id: "Ваш ID", sett_theme: "Тема", sett_lang: "Язык", sett_save: "Сохранить",
+    ui_balance_text: "Кристаллы: ", ui_power_text: "Сила", ui_timer_label: "Кулдаун",
+    shop_title: "Магазин улучшений", shop_close: "Закрыть",
+    w_title: "Подтверждение", w_btn: "Создать заявку", w_cancel: "Отмена",
+    nav_shop: "Магазин", nav_withdraw: "Вывод",
+    msg_low_balance: "Недостаточно кристаллов!", msg_wait: "Ожидание: "
+  },
+  en: {
+    sett_title: "Settings", sett_id: "Your ID", sett_theme: "Theme", sett_lang: "Language", sett_save: "Save Changes",
+    ui_balance_text: "Crystals: ", ui_power_text: "Power", ui_timer_label: "Cooldown",
+    shop_title: "Upgrade Shop", shop_close: "Close",
+    w_title: "Confirmation", w_btn: "Create Request", w_cancel: "Cancel",
+    nav_shop: "Shop", nav_withdraw: "Withdraw",
+    msg_low_balance: "Not enough crystals!", msg_wait: "Wait: "
+  }
+};
+
+let state = {
+  balance: +localStorage.getItem("balance") || 0,
+  power: +localStorage.getItem("power") || 1,
+  playerId: localStorage.getItem("playerId") || "",
+  theme: localStorage.getItem("theme") || "dark",
+  lang: localStorage.getItem("lang") || "ru",
+  cooldownUntil: +localStorage.getItem("cooldownUntil") || 0
+};
+
+let timerInt;
+
+function init() {
+  applyTheme();
+  applyLanguage();
+  
+  document.getElementById("playerId").value = state.playerId;
+  document.getElementById("themeSel").value = state.theme;
+  document.getElementById("langSel").value = state.lang;
+  
+  updateUI();
+  if (Date.now() < state.cooldownUntil) startTimer();
+}
+
+function applyTheme() {
+  document.getElementById("body").className = state.theme;
+}
+
+function applyLanguage() {
+  const cur = langData[state.lang];
+  for (let key in cur) {
+    const el = document.getElementById(key);
+    if (el) el.innerText = cur[key];
+  }
+  // Отдельная логика для динамических текстов
+  updateUI();
+}
+
+function save() {
+  localStorage.setItem("balance", state.balance);
+  localStorage.setItem("power", state.power);
+  localStorage.setItem("playerId", state.playerId);
+  localStorage.setItem("theme", state.theme);
+  localStorage.setItem("lang", state.lang);
+  localStorage.setItem("cooldownUntil", state.cooldownUntil);
+}
+
+function updateUI() {
+  document.getElementById("balance").innerText = state.balance;
+  document.getElementById("power").innerText = state.power;
+  document.getElementById("showId").innerText = state.playerId || "-";
+}
+
+/* КЛИК */
+document.getElementById("clickBtn").onclick = () => {
+  if (Date.now() < state.cooldownUntil) return;
+
+  state.balance += state.power;
+  state.cooldownUntil = Date.now() + 5000;
+
+  save();
+  updateUI();
+  startTimer();
+};
+
+function startTimer() {
+  if (timerInt) clearInterval(timerInt);
+  const cur = langData[state.lang];
+  
+  timerInt = setInterval(() => {
+    let left = state.cooldownUntil - Date.now();
+    if (left <= 0) {
+      document.getElementById("timer").innerText = "";
+      clearInterval(timerInt);
+      return;
+    }
+    document.getElementById("timer").innerText = cur.msg_wait + Math.ceil(left / 1000) + "s";
+  }, 200);
+}
+
+/* НАСТРОЙКИ */
+function saveSettings() {
+  state.playerId = document.getElementById("playerId").value;
+  state.theme = document.getElementById("themeSel").value;
+  state.lang = document.getElementById("langSel").value;
+
+  applyTheme();
+  applyLanguage();
+  save();
+  toggleMenu();
+}
+
+function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); }
+
+function openModal(id) {
+  if(id === 'withdrawModal') {
+    const cur = state.lang === 'ru' ? 'Вы выводите на ID' : 'Withdrawing to ID';
+    document.getElementById("confirmText").innerText = `${cur}: ${state.playerId || '?'}`;
+  }
+  document.getElementById(id).style.display = "block";
+}
+
+function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+function buy(p, c) {
+  if (state.balance < c) {
+    alert(langData[state.lang].msg_low_balance);
+    return;
+  }
+  state.balance -= c;
+  state.power += p;
+  save();
+  updateUI();
+}
+
+function createWithdraw() {
+  // Твоя ссылка добавлена сюда:
+  window.open("https://forms.gle/H24uHTgV68MiKC6m9", "_blank");
+  state.balance = 0;
+  save();
+  updateUI();
+  closeModal('withdrawModal');
+}
+
+init();
+</script>
+
+</body>
+</html>
