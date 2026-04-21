@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker v0.6.7</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #00c6ff;
+  --bg: #0f172a;
+  --text: #ffffff;
+  --card-bg: #1e293b;
+  --input-bg: #0f172a;
+  --input-text: #ffffff;
+  --rare: #4ade80;
+  --super-rare: #60a5fa;
+  --epic: #a855f7;
+  --mythic: #f43f5e;
+  --legendary: #fbbf24;
+  --admin-neon: #ff00ff;
+}
+
+.light { --bg: #f1f5f9; --text: #1e293b; --card-bg: #ffffff; --input-bg: #e2e8f0; --input-text: #1e293b; }
+
+body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; user-select: none; overflow-x: hidden; }
+
+.header { display: flex; justify-content: space-between; padding: 20px; font-weight: 800; }
+.version { font-size: 0.8rem; opacity: 0.5; margin-left: 5px; }
+
+/* SIDEBAR */
+.sidebar { position: fixed; right: -280px; top: 0; width: 260px; height: 100%; background: var(--card-bg); padding: 30px 20px; transition: 0.3s; z-index: 1000; box-shadow: -5px 0 15px rgba(0,0,0,0.2); }
+.sidebar.active { right: 0; }
+
+input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); margin: 10px 0 20px; background: var(--input-bg); color: var(--input-text); }
+
+.btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 700; cursor: pointer; }
+
+#adminLink { display: none; margin-top: 15px; color: var(--admin-neon); font-weight: 800; cursor: pointer; text-align: center; border: 1px solid var(--admin-neon); padding: 8px; border-radius: 10px; }
+
+/* КАРТОЧКИ */
+.card { text-align: center; margin: 15px; padding: 20px; background: var(--card-bg); border-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.stat-box { display: flex; justify-content: space-around; margin-top: 10px; font-size: 0.9rem; }
+
+/* КЛИКЕРЫ */
+.click-container { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-top: 10px; }
+.clickBtn { 
+    width: 160px; height: 160px; border-radius: 50%; 
+    background: radial-gradient(circle, var(--primary) 0%, #0072ff 100%); 
+    display: flex; align-items: center; justify-content: center; cursor: pointer; 
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.4); transition: 0.1s;
+}
+.clickBtn:active { transform: scale(0.92); }
+#crystalImg { width: 100px; height: 100px; object-fit: contain; background: transparent !important; }
+
+.super-click-btn {
+    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    color: white; border: none; padding: 15px 30px; border-radius: 50px;
+    font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+}
+.super-click-btn:disabled { background: #475569; opacity: 0.7; }
+
+/* НИЖНЯЯ ПАНЕЛЬ */
+.bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; background: var(--card-bg); display: flex; justify-content: space-around; padding: 12px 5px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 900; }
+.nav-item { background: none; border: none; color: var(--text); display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; cursor: pointer; flex: 1; }
+.nav-item span { font-size: 20px; margin-bottom: 4px; }
+
+/* МОДАЛКИ */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; }
+.modal-content { background: var(--card-bg); padding: 25px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; border-radius: 35px 35px 0 0; text-align: center; color: var(--text); max-height: 85vh; overflow-y: auto; }
+
+/* МАГАЗИН */
+.shop-item { background: var(--input-bg); padding: 15px; border-radius: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; text-align: left; border-left: 5px solid gray; }
+.shop-item.rare { border-color: var(--rare); }
+.shop-item.super-rare { border-color: var(--super-rare); }
+.shop-item.epic { border-color: var(--epic); }
+.shop-item.mythic { border-color: var(--mythic); }
+.shop-item.legendary { border-color: var(--legendary); }
+.shop-item button { padding: 8px 15px; border-radius: 10px; border: none; background: var(--primary); color: white; cursor: pointer; }
+
+/* ЕЖЕДНЕВНЫЕ НАГРАДЫ КАРТОЧКИ */
+.day-card { background: var(--input-bg); padding: 10px; border-radius: 12px; font-size: 0.75rem; border: 1px solid transparent; }
+.day-card.active { border-color: var(--primary); background: rgba(0,198,255,0.1); }
+.day-card.claimed { opacity: 0.4; }
+
+.admin-grid { display: grid; gap: 10px; margin: 20px 0; }
+.admin-btn { background: none; border: 1px solid var(--admin-neon); color: var(--admin-neon); padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+
+#timer, #superTimer, #dailyTimer { color: #f43f5e; font-weight: 800; font-size: 0.8rem; height: 15px; margin: 5px 0; }
+</style>
+</head>
+<body id="body">
+
+<div class="header">
+  <div>AimBrawl <span style="color:var(--primary)">Clicker</span><span class="version">v0.6.7</span></div>
+  <div style="cursor:pointer; font-size:24px;" onclick="toggleMenu()">☰</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <h3 id="t_settings">Настройки</h3>
+  <label id="t_your_id">Ваш ID</label>
+  <input id="playerIdInput" placeholder="ID...">
+  <div id="adminLink" onclick="openModal('adminModal')">⚡ DEV PANEL ⚡</div>
+  <label id="t_theme">Тема</label>
+  <select id="themeSel" onchange="saveSettings()"><option value="dark">Dark</option><option value="light">Light</option></select>
+  <label id="t_lang">Язык</label>
+  <select id="langSel" onchange="saveSettings()"><option value="ru">Русский</option><option value="en">English</option></select>
+  <button class="btn-main" onclick="saveSettings()" id="t_save">Сохранить</button>
+</div>
+
+<div class="card">
+  <div style="opacity: 0.6; font-size: 0.8rem;">ID: <span id="displayId">-</span></div>
+  <h2 style="margin: 5px 0;"><span id="t_crystals">Кристаллы</span>: <span id="balance" style="color:var(--primary)">0.0</span></h2>
+  <div class="stat-box">
+    <div><span id="t_power">Сила</span>: <b id="powerVal">0.1</b></div>
+    <div><span id="t_cooldown">Задержка</span>: <b id="cdVal">3</b>с</div>
+  </div>
+  <p id="timer"></p>
+</div>
+
+<div class="click-container">
+  <div class="clickBtn" id="clickBtn">
+    <img src="crystal.png" id="crystalImg" alt="💎">
+  </div>
+  <button class="super-click-btn" id="superBtn" onclick="superClick()">SUPER CLICK 🍀</button>
+  <p id="superTimer"></p>
+</div>
+
+<div class="modal" id="dailyModal">
+  <div class="modal-content">
+    <h3 id="t_daily_title">Награды</h3>
+    <div id="dailyGrid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:20px 0;"></div>
+    <p id="dailyTimer"></p>
+    <button class="btn-main" id="claimBtn" onclick="claimDaily()">Забрать</button>
+    <br>
+    <button onclick="closeModal('dailyModal')" style="background:none; border:none; color:var(--text); margin-top:15px;" id="t_close_daily">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal" id="shopModal">
+  <div class="modal-content">
+    <h3 id="t_shop_title">Магазин Редкостей</h3>
+    <div id="shopList"></div>
+    <hr style="opacity: 0.1; margin: 15px 0;">
+    <div class="shop-item">
+       <div><b id="t_super_up">Super-Click 2x Speed</b><br><small id="t_super_desc">12h → 6h</small></div>
+       <button id="buySuperUpgrade" onclick="buySuperCD()">💰 1000</button>
+    </div>
+    <button onclick="closeModal('shopModal')" style="background:none; border:none; color:var(--primary); margin-top:10px;" id="t_close_shop">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal" id="withdrawModal">
+  <div class="modal-content">
+    <h3 id="t_withdraw_title">Вывод</h3>
+    <p id="withdrawConfirmText"></p>
+    <button class="btn-main" onclick="createWithdraw()" id="t_req_btn">Создать заявку</button>
+    <br>
+    <button onclick="closeModal('withdrawModal')" style="opacity:0.5; background:none; border:none; color:var(--text); margin-top:15px;" id="t_cancel">Отмена</button>
+  </div>
+</div>
+
+<div class="modal" id="adminModal">
+  <div class="modal-content" style="border: 2px solid var(--admin-neon);">
+    <h2 style="color: var(--admin-neon)">ADMIN PANEL</h2>
+    <div class="admin-grid">
+      <button class="admin-btn" onclick="adminAction('money')">+100,000 CRYSTALS</button>
+      <button class="admin-btn" onclick="adminAction('cd')">RESET MAIN CD</button>
+      <button class="admin-btn" onclick="adminAction('unlimited_super')">RESET SUPER CLICK</button>
+      <button class="admin-btn" onclick="adminAction('power')">SET POWER</button>
+    </div>
+    <button onclick="closeModal('adminModal')" style="color:white; background:none; border:none;">CLOSE</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item" onclick="openModal('shopModal')"><span>🛒</span><span id="t_nav_shop">Магазин</span></button>
+  <button class="nav-item" onclick="openModal('dailyModal')"><span>🎁</span><span id="t_nav_daily">Награды</span></button>
+  <button class="nav-item" onclick="openModal('withdrawModal')"><span>💸</span><span id="t_nav_withdraw">Вывод</span></button>
+</div>
+
+<script>
+const ADMIN_SECRET = "BRO67";
+const DAILY_REWARDS = [10, 15, 20, 35, 50, 75, 100];
+
+const translations = {
+  ru: {
+    t_settings: "Настройки", t_your_id: "Ваш ID", t_theme: "Тема", t_lang: "Язык", t_save: "Сохранить",
+    t_crystals: "Кристаллы", t_power: "Сила", t_cooldown: "Задержка",
+    t_shop_title: "Магазин Редкостей", t_close_shop: "Закрыть", t_super_up: "Супер-клик x2", t_super_desc: "12ч → 6ч",
+    t_withdraw_title: "Вывод", t_req_btn: "Создать заявку", t_cancel: "Отмена",
+    t_nav_shop: "Магазин", t_nav_daily: "Награды", t_nav_withdraw: "Вывод",
+    t_daily_title: "Награды", t_close_daily: "Закрыть", t_day: "День", t_claim: "Забрать",
+    wait: "Жди: ", jackpot: "ДЖЕКПОТ: ", low_money: "Недостаточно!", bought: "Куплено",
+    withdraw_to: "Вывод на ID: ", next: "След: "
+  },
+  en: {
+    t_settings: "Settings", t_your_id: "Your ID", t_theme: "Theme", t_lang: "Language", t_save: "Save",
+    t_crystals: "Crystals", t_power: "Power", t_cooldown: "Cooldown",
+    t_shop_title: "Rarity Shop", t_close_shop: "Close", t_super_up: "Super-click x2", t_super_desc: "12h → 6h",
+    t_withdraw_title: "Withdraw", t_req_btn: "Request", t_cancel: "Cancel",
+    t_nav_shop: "Shop", t_nav_daily: "Daily", t_nav_withdraw: "Payout",
+    t_daily_title: "Rewards", t_close_daily: "Close", t_day: "Day", t_claim: "Claim",
+    wait: "Wait: ", jackpot: "JACKPOT: ", low_money: "Not enough!", bought: "Owned",
+    withdraw_to: "Withdraw to ID: ", next: "Next: "
+  }
+};
+
+const SHOP_ITEMS = [
+  { id: 'i1', rarity: 'rare', name: '+1 Click', price: 50, power: 1, cd: 5000 },
+  { id: 'i2', rarity: 'super-rare', name: '+2 Click', price: 150, power: 2, cd: 15000 },
+  { id: 'i3', rarity: 'epic', name: '+5 Click', price: 500, power: 5, cd: 60000 },
+  { id: 'i4', rarity: 'mythic', name: '+10 Click', price: 2000, power: 10, cd: 900000 },
+  { id: 'i5', rarity: 'legendary', name: '+25 Click', price: 10000, power: 25, cd: 3600000 }
+];
+
+let state = {
+  balance: parseFloat(localStorage.getItem("b_067")) || 0,
+  power: parseFloat(localStorage.getItem("p_067")) || 0.1,
+  currentCD: parseInt(localStorage.getItem("cd_067")) || 3000,
+  playerId: localStorage.getItem("id_067") || "",
+  theme: localStorage.getItem("th_067") || "dark",
+  lang: localStorage.getItem("ln_067") || "ru",
+  cooldownUntil: parseInt(localStorage.getItem("cu_067")) || 0,
+  superNextClaim: parseInt(localStorage.getItem("sn_067")) || 0,
+  superInterval: parseInt(localStorage.getItem("si_067")) || 43200000,
+  dailyDay: parseInt(localStorage.getItem("dd_067")) || 0,
+  dailyNext: parseInt(localStorage.getItem("dn_067")) || 0,
+  purchased: JSON.parse(localStorage.getItem("inv_067")) || []
+};
+
+let timers = { main: null, super: null, daily: null };
+
+function save() {
+  for (let key in state) {
+    let saveKey = key.split(/(?=[A-Z])/).map(s => s[0]).join('').toLowerCase() + "_067"; 
+    // Упрощенный маппинг для краткости примера:
+  }
+  localStorage.setItem("b_067", state.balance.toFixed(1));
+  localStorage.setItem("p_067", state.power);
+  localStorage.setItem("cd_067", state.currentCD);
+  localStorage.setItem("id_067", state.playerId);
+  localStorage.setItem("th_067", state.theme);
+  localStorage.setItem("ln_067", state.lang);
+  localStorage.setItem("cu_067", state.cooldownUntil);
+  localStorage.setItem("sn_067", state.superNextClaim);
+  localStorage.setItem("si_067", state.superInterval);
+  localStorage.setItem("dd_067", state.dailyDay);
+  localStorage.setItem("dn_067", state.dailyNext);
+  localStorage.setItem("inv_067", JSON.stringify(state.purchased));
+}
+
+function updateUI() {
+  const L = translations[state.lang];
+  document.getElementById("balance").innerText = state.balance.toFixed(1);
+  document.getElementById("powerVal").innerText = state.power;
+  document.getElementById("cdVal").innerText = state.currentCD / 1000;
+  document.getElementById("displayId").innerText = state.playerId || "-";
+  document.getElementById("body").className = state.theme;
+  document.getElementById("adminLink").style.display = (state.playerId === ADMIN_SECRET) ? "block" : "none";
+
+  // Перевод всех статичных ID
+  for (let key in L) {
+    let el = document.getElementById(key);
+    if (el) el.innerText = L[key];
+  }
+
+  renderShop();
+  renderDailyGrid();
+  checkTimers();
+}
+
+/* МАГАЗИН */
+function renderShop() {
+  const L = translations[state.lang];
+  const container = document.getElementById("shopList");
+  container.innerHTML = "";
+  SHOP_ITEMS.forEach(item => {
+    const isBought = state.purchased.includes(item.id);
+    container.innerHTML += `
+      <div class="shop-item ${item.rarity}">
+        <div><b>${item.name}</b><br><small>+${item.power} Power | CD: ${item.cd/1000}s</small></div>
+        <button onclick="buyItem('${item.id}')" ${isBought ? 'disabled' : ''}>
+          ${isBought ? L.bought : '💰 ' + item.price}
+        </button>
+      </div>`;
+  });
+  
+  const sUp = document.getElementById("buySuperUpgrade");
+  if(state.superInterval < 43200000) { sUp.disabled = true; sUp.innerText = L.bought; }
+}
+
+function buyItem(id) {
+  const L = translations[state.lang];
+  const item = SHOP_ITEMS.find(x => x.id === id);
+  if (state.balance < item.price) return alert(L.low_money);
+  
+  state.balance -= item.price;
+  state.power += item.power;
+  
+  // ФИКС БАГА ЧИТЕРСТВА: Задержка только увеличивается
+  state.currentCD = Math.max(state.currentCD, item.cd);
+  
+  state.purchased.push(id);
+  save(); updateUI();
+}
+
+function buySuperCD() {
+  if (state.balance < 1000) return alert(translations[state.lang].low_money);
+  state.balance -= 1000;
+  state.superInterval = 21600000;
+  save(); updateUI();
+}
+
+/* ЕЖЕДНЕВНЫЕ НАГРАДЫ */
+function renderDailyGrid() {
+  const L = translations[state.lang];
+  const grid = document.getElementById("dailyGrid");
+  grid.innerHTML = "";
+  DAILY_REWARDS.forEach((amt, i) => {
+    let cls = "day-card";
+    if (i < state.dailyDay) cls += " claimed";
+    if (i === state.dailyDay) cls += " active";
+    grid.innerHTML += `<div class="${cls}">${L.t_day} ${i+1}<br><b>${amt}💎</b></div>`;
+  });
+
+  const btn = document.getElementById("claimBtn");
+  if (Date.now() < state.dailyNext) {
+    btn.disabled = true;
+    btn.style.opacity = "0.5";
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.innerText = L.t_claim;
+  }
+}
+
+function claimDaily() {
+  if (Date.now() < state.dailyNext) return;
+  state.balance += DAILY_REWARDS[state.dailyDay];
+  state.dailyDay = (state.dailyDay + 1) % 7;
+  state.dailyNext = Date.now() + 86400000; // 24h
+  save(); updateUI();
+}
+
+/* КЛИКИ И ТАЙМЕРЫ */
+document.getElementById("clickBtn").onclick = () => {
+  if (Date.now() < state.cooldownUntil) return;
+  state.balance += state.power;
+  state.cooldownUntil = Date.now() + state.currentCD;
+  save(); updateUI();
+};
+
+function superClick() {
+  if (Date.now() < state.superNextClaim) return;
+  const L = translations[state.lang];
+  let r = Math.random() * 100, win = 10;
+  if (r > 99.5) win = 10000; else if (r > 95) win = 1000; else if (r > 85) win = 100;
+  state.balance += win;
+  state.superNextClaim = Date.now() + state.superInterval;
+  save(); updateUI();
+  alert(L.jackpot + win + " 💎");
+}
+
+function checkTimers() {
+  if (timers.main) clearInterval(timers.main);
+  timers.main = setInterval(() => {
+    let L = translations[state.lang];
+    let left = state.cooldownUntil - Date.now();
+    document.getElementById("timer").innerText = left > 0 ? L.wait + Math.ceil(left/1000) + "s" : "";
+    
+    let sLeft = state.superNextClaim - Date.now();
+    const sBtn = document.getElementById("superBtn");
+    if (sLeft > 0) {
+      sBtn.disabled = true;
+      let h = Math.floor(sLeft/3600000), m = Math.floor((sLeft%3600000)/60000), s = Math.floor((sLeft%60000)/1000);
+      document.getElementById("superTimer").innerText = `${h}h ${m}m ${s}s`;
+    } else {
+      sBtn.disabled = false;
+      document.getElementById("superTimer").innerText = "";
+    }
+
+    let dLeft = state.dailyNext - Date.now();
+    document.getElementById("dailyTimer").innerText = dLeft > 0 ? L.next + Math.ceil(dLeft/3600000) + "h" : "";
+  }, 1000);
+}
+
+/* СИСТЕМНЫЕ */
+function saveSettings() {
+  state.playerId = document.getElementById("playerIdInput").value;
+  state.theme = document.getElementById("themeSel").value;
+  state.lang = document.getElementById("langSel").value;
+  save(); updateUI();
+}
+
+function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); }
+function openModal(id) { 
+  if(id === 'withdrawModal') document.getElementById("withdrawConfirmText").innerText = translations[state.lang].withdraw_to + (state.playerId || "?");
+  document.getElementById(id).style.display = "block"; 
+}
+function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+function createWithdraw() {
+  window.open("https://forms.gle/H24uHTgV68MiKC6m9", "_blank");
+  state.balance = 0; save(); updateUI(); closeModal('withdrawModal');
+}
+
+/* ADMIN */
+function adminAction(type) {
+  if (type === 'money') state.balance += 100000;
+  if (type === 'cd') state.cooldownUntil = 0;
+  if (type === 'unlimited_super') state.superNextClaim = 0;
+  if (type === 'power') { let p = prompt("Power:"); if(p) state.power = parseFloat(p); }
+  save(); updateUI();
+}
+
+// Init
+document.getElementById("playerIdInput").value = state.playerId;
+document.getElementById("themeSel").value = state.theme;
+document.getElementById("langSel").value = state.lang;
+updateUI();
+</script>
+</body>
+</html>
