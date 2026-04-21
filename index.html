@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  transition: 0.3s;
+}
+
+/* темы */
+.dark {
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+  color: white;
+}
+
+.light {
+  background: #f4f4f4;
+  color: #111;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  align-items: center;
+}
+
+.menuBtn {
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* карточки */
+.card {
+  margin: 15px auto;
+  width: 90%;
+  max-width: 420px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.click { background:#00c6ff; font-size:20px; }
+.upg { background:#7c4dff; color:white; }
+.withdraw { background:#ff4b5c; }
+.shop { background:#ffb347; }
+
+/* sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -260px;
+  width: 240px;
+  height: 100%;
+  background: #111827;
+  padding: 20px;
+  transition: 0.3s;
+  color: white;
+  z-index: 999;
+}
+
+.sidebar.active {
+  right: 0;
+}
+
+.version {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  opacity: 0.6;
+}
+</style>
+</head>
+
+<body id="body" class="dark">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="title" id="title">AimBrawlClicker</div>
+  <div class="menuBtn" onclick="toggleMenu()">☰</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+
+  <h3 id="settings">Настройки</h3>
+
+  <input id="playerId" placeholder="ID">
+
+  <br><br>
+
+  <label>Theme</label>
+  <select id="themeSel">
+    <option value="dark">Dark</option>
+    <option value="light">Light</option>
+  </select>
+
+  <br><br>
+
+  <label>Language</label>
+  <select id="langSel">
+    <option value="ru">Русский</option>
+    <option value="en">English</option>
+  </select>
+
+  <button onclick="saveSettings()" class="shop">Save</button>
+
+</div>
+
+<!-- MAIN -->
+<div class="card">
+  <button class="click" id="clickBtn">КЛИК!</button>
+  <p id="balanceText">Баланс: <span id="balance">0</span> 💎</p>
+  <p id="powerText">Сила: <span id="power">1</span></p>
+  <p id="timer"></p>
+</div>
+
+<div class="card">
+  <button class="shop" onclick="openShop()" id="shopBtn">Магазин</button>
+</div>
+
+<div class="card">
+  <button class="withdraw" onclick="openWithdraw()" id="withdrawBtn">Вывод</button>
+  <p id="withdrawMsg"></p>
+</div>
+
+<div class="version">v0.5.5</div>
+
+<script>
+
+/* --------- DATA --------- */
+let balance = +localStorage.getItem("balance") || 0;
+let power = +localStorage.getItem("power") || 1;
+let playerId = localStorage.getItem("playerId") || "";
+let theme = localStorage.getItem("theme") || "dark";
+let lang = localStorage.getItem("lang") || "ru";
+
+document.getElementById("body").className = theme;
+
+/* --------- LANG --------- */
+const texts = {
+  ru: {
+    balance: "Баланс",
+    power: "Сила",
+    shop: "Магазин",
+    withdraw: "Вывод",
+    settings: "Настройки"
+  },
+  en: {
+    balance: "Balance",
+    power: "Power",
+    shop: "Shop",
+    withdraw: "Withdraw",
+    settings: "Settings"
+  }
+};
+
+function applyLang() {
+  document.getElementById("balanceText").innerHTML =
+    texts[lang].balance + ": <span id='balance'>" + balance + "</span> 💎";
+
+  document.getElementById("powerText").innerHTML =
+    texts[lang].power + ": <span id='power'>" + power + "</span>";
+
+  document.getElementById("shopBtn").innerText = texts[lang].shop;
+  document.getElementById("withdrawBtn").innerText = texts[lang].withdraw;
+  document.getElementById("settings").innerText = texts[lang].settings;
+}
+
+applyLang();
+
+/* --------- SAVE --------- */
+function save() {
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("power", power);
+  localStorage.setItem("playerId", playerId);
+}
+
+/* --------- UPDATE --------- */
+function update() {
+  document.getElementById("balance").innerText = balance;
+  document.getElementById("power").innerText = power;
+}
+
+/* --------- CLICK + TIMER --------- */
+let cooldown = false;
+
+document.getElementById("clickBtn").onclick = () => {
+  if (cooldown) return;
+
+  balance += power;
+  save();
+  update();
+
+  let t = 3;
+  document.getElementById("timer").innerText = t + "s";
+
+  cooldown = true;
+
+  let interval = setInterval(() => {
+    t--;
+    document.getElementById("timer").innerText = t > 0 ? t + "s" : "";
+  }, 1000);
+
+  setTimeout(() => {
+    cooldown = false;
+    clearInterval(interval);
+  }, 3000);
+};
+
+/* --------- MENU --------- */
+function toggleMenu() {
+  document.getElementById("sidebar").classList.toggle("active");
+}
+
+/* --------- SETTINGS --------- */
+function saveSettings() {
+  playerId = document.getElementById("playerId").value;
+  theme = document.getElementById("themeSel").value;
+  lang = document.getElementById("langSel").value;
+
+  localStorage.setItem("theme", theme);
+  localStorage.setItem("lang", lang);
+
+  document.getElementById("body").className = theme;
+
+  applyLang();
+  save();
+  update();
+
+  toggleMenu();
+}
+
+/* --------- SHOP (заглушка пока) --------- */
+function openShop(){
+  alert("🛒 Магазин будет обновлён дальше");
+}
+
+/* --------- WITHDRAW --------- */
+function openWithdraw(){
+  if(balance < 100) return alert("❌ min 100 💎");
+  if(!playerId) return alert("❌ set ID");
+
+  document.getElementById("withdrawMsg").innerText =
+    `ID: ${playerId} | ${balance} 💎`;
+
+  balance = 0;
+  save();
+  update();
+
+  window.open("https://forms.gle/H24uHTgV68MiKC6m9","_blank");
+}
+
+update();
+
+</script>
+
+</body>
+</html>
