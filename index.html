@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker v0.6.4</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --primary: #00c6ff;
+  --bg: #0f172a;
+  --text: #ffffff;
+  --card-bg: #1e293b;
+  --input-bg: #0f172a;
+  --input-text: #ffffff;
+  --admin-color: #f59e0b;
+  --success: #10b981;
+}
+
+.light {
+  --bg: #f1f5f9;
+  --text: #1e293b;
+  --card-bg: #ffffff;
+  --input-bg: #e2e8f0;
+  --input-text: #1e293b;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: 0.3s;
+  user-select: none;
+  overflow: hidden;
+}
+
+.header { display: flex; justify-content: space-between; padding: 20px; font-weight: 800; }
+.version { font-size: 0.8rem; opacity: 0.5; margin-left: 5px; }
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed; right: -280px; top: 0; width: 260px; height: 100%;
+  background: var(--card-bg); padding: 30px 20px; transition: 0.3s;
+  z-index: 1000; box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+}
+.sidebar.active { right: 0; }
+
+input, select {
+  width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1);
+  margin: 10px 0 20px; background: var(--input-bg); color: var(--input-text); box-sizing: border-box;
+}
+
+.saveBtn {
+  width: 100%; padding: 14px; border-radius: 12px; border: none;
+  background: var(--primary); color: white; font-weight: 700; cursor: pointer;
+}
+
+#adminBtnToggle {
+  display: none; width: 100%; padding: 10px; margin-top: 10px;
+  background: var(--admin-color); color: white; border: none; border-radius: 10px;
+  font-weight: 800; cursor: pointer;
+}
+
+.card { text-align: center; margin: 15px; padding: 20px; background: var(--card-bg); border-radius: 24px; }
+
+/* CLICKER */
+.clickWrap { display: flex; justify-content: center; margin-top: 20px; }
+.clickBtn {
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, var(--primary) 0%, #0072ff 100%);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 0 30px rgba(0, 198, 255, 0.3); transition: transform 0.1s;
+}
+.clickBtn:active { transform: scale(0.92); }
+#crystalImg { width: 110px; height: 110px; object-fit: contain; background: transparent !important; }
+
+/* NAV */
+.bottom-nav {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  width: 95%; max-width: 450px; background: var(--card-bg);
+  display: flex; justify-content: space-around; padding: 10px 5px; border-radius: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 900;
+}
+.nav-item { background: none; border: none; color: var(--text); display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: 600; cursor: pointer; flex: 1; }
+.nav-item span { font-size: 18px; margin-bottom: 4px; }
+
+/* MODALS */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; }
+.modal-content { background: var(--card-bg); padding: 25px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; border-radius: 30px 30px 0 0; text-align: center; color: var(--text); max-height: 80vh; overflow-y: auto; }
+
+/* DAILY REWARDS STYLES */
+.daily-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; }
+.day-card { background: var(--input-bg); padding: 10px 5px; border-radius: 12px; font-size: 0.8rem; border: 2px solid transparent; }
+.day-card.active { border-color: var(--primary); background: rgba(0, 198, 255, 0.1); }
+.day-card.claimed { opacity: 0.5; }
+.day-card b { display: block; color: var(--primary); margin-top: 5px; }
+
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+.buy-btn { background: var(--input-bg); border: none; padding: 15px; border-radius: 16px; color: var(--input-text); cursor: pointer; }
+
+#timer, #dailyTimer { color: #ef4444; font-weight: 800; }
+</style>
+</head>
+
+<body id="body">
+
+<div class="header">
+  <div>AimBrawl <span style="color:var(--primary)">Clicker</span><span class="version">v0.6.4</span></div>
+  <div style="cursor:pointer; font-size:24px;" onclick="toggleMenu()">☰</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <h3 id="t_settings">Настройки</h3>
+  <label id="t_your_id">Ваш ID</label>
+  <input id="playerIdInput" placeholder="ID...">
+  
+  <button id="adminBtnToggle" onclick="openModal('adminModal')">⚡ ADMIN PANEL</button>
+
+  <label id="t_theme">Тема</label>
+  <select id="themeSel">
+    <option value="dark">Dark</option>
+    <option value="light">Light</option>
+  </select>
+  <label id="t_lang">Язык</label>
+  <select id="langSel">
+    <option value="ru">Русский</option>
+    <option value="en">English</option>
+  </select>
+  <button class="saveBtn" onclick="saveSettings()" id="t_save">Сохранить</button>
+</div>
+
+<div class="card">
+  <div style="opacity: 0.6; font-size: 0.8rem;">ID: <span id="displayId">-</span></div>
+  <h2 style="margin: 10px 0;"><span id="t_crystals">Кристаллы</span>: <span id="balance" style="color:var(--primary)">0</span></h2>
+  <div style="display: flex; justify-content: space-around;">
+    <div><span id="t_power">Сила</span>: <b id="powerVal">1</b></div>
+    <div><span id="t_cooldown">Задержка</span>: <b>5с</b></div>
+  </div>
+  <p id="timer" style="height:20px; margin-top:10px;"></p>
+</div>
+
+<div class="clickWrap">
+  <div class="clickBtn" id="clickBtn">
+    <img src="crystal.png" id="crystalImg" alt="💎">
+  </div>
+</div>
+
+<div class="modal" id="dailyModal">
+  <div class="modal-content">
+    <h3 id="t_daily_title">Ежедневная награда</h3>
+    <p id="t_daily_desc">Заходи каждый день и получай больше!</p>
+    
+    <div class="daily-grid" id="dailyGrid">
+      </div>
+
+    <p id="dailyTimer" style="margin-bottom: 15px;"></p>
+    <button class="saveBtn" id="claimBtn" onclick="claimDaily()">Забрать</button>
+    <br>
+    <button onclick="closeModal('dailyModal')" style="color:var(--text); background:none; border:none; cursor:pointer; margin-top:15px;" id="t_close_daily">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal" id="adminModal"><div class="modal-content"><h3 style="color: var(--admin-color)">Панель разработчика</h3><div class="admin-grid"><button class="admin-action-btn" onclick="adminAddMoney()">Добавить +1,000,000 💎</button><button class="admin-action-btn" onclick="adminResetCD()">Сбросить кулдаун ⏱️</button><button class="admin-action-btn" onclick="adminSetPower()">Установить Силу Клику 🚀</button></div><button onclick="closeModal('adminModal')" style="color:var(--text); background:none; border:none; cursor:pointer;">Закрыть</button></div></div>
+<div class="modal" id="shopModal"><div class="modal-content"><h3 id="t_shop_title">Магазин</h3><div class="shop-grid"><button class="buy-btn" onclick="buy(2, 50)"><b>+2</b> 💰 50</button><button class="buy-btn" onclick="buy(5, 150)"><b>+5</b> 💰 150</button><button class="buy-btn" onclick="buy(10, 500)"><b>+10</b> 💰 500</button><button class="buy-btn" onclick="buy(50, 2000)"><b>+50</b> 💰 2000</button></div><button onclick="closeModal('shopModal')" style="background:none; border:none; color:var(--primary); cursor:pointer;" id="t_close_shop">Закрыть</button></div></div>
+<div class="modal" id="withdrawModal"><div class="modal-content"><h3 id="t_withdraw_title">Вывод</h3><p id="withdrawConfirmText" style="margin-bottom: 20px;"></p><button class="saveBtn" onclick="createWithdraw()" id="t_req_btn">Создать заявку</button><br><br><button onclick="closeModal('withdrawModal')" style="background:none; border:none; color:var(--text); opacity:0.5; cursor:pointer;" id="t_cancel">Отмена</button></div></div>
+
+<div class="bottom-nav">
+  <button class="nav-item" onclick="openModal('shopModal')">
+    <span>🛒</span> <span id="t_nav_shop">Магазин</span>
+  </button>
+  <button class="nav-item" onclick="openModal('dailyModal')">
+    <span>🎁</span> <span id="t_nav_daily">Награды</span>
+  </button>
+  <button class="nav-item" onclick="openModal('withdrawModal')">
+    <span>💸</span> <span id="t_nav_withdraw">Вывод</span>
+  </button>
+</div>
+
+<script>
+const ADMIN_KEY = "BOSS777";
+const REWARDS = [10, 15, 20, 35, 50, 75, 100];
+
+const translations = {
+  ru: {
+    t_settings: "Настройки", t_your_id: "Ваш ID", t_theme: "Тема", t_lang: "Язык", t_save: "Сохранить",
+    t_crystals: "Кристаллы", t_power: "Сила", t_cooldown: "Задержка",
+    t_shop_title: "Магазин улучшений", t_close_shop: "Закрыть",
+    t_withdraw_title: "Вывод средств", t_req_btn: "Создать заявку", t_cancel: "Отмена",
+    t_nav_shop: "Магазин", t_nav_withdraw: "Вывод", t_nav_daily: "Награды",
+    t_daily_title: "Ежедневная награда", t_daily_desc: "Заходи каждый день!", t_close_daily: "Закрыть",
+    t_day: "День", alert_low: "Недостаточно!", timer_wait: "Жди: ", claim: "Забрать",
+    withdraw_info: "Вывод на ID: ", next_reward: "До следующей: "
+  },
+  en: {
+    t_settings: "Settings", t_your_id: "Your ID", t_theme: "Theme", t_lang: "Language", t_save: "Save",
+    t_crystals: "Crystals", t_power: "Power", t_cooldown: "Cooldown",
+    t_shop_title: "Upgrade Shop", t_close_shop: "Close",
+    t_withdraw_title: "Withdrawal", t_req_btn: "Create Request", t_cancel: "Cancel",
+    t_nav_shop: "Shop", t_nav_withdraw: "Withdraw", t_nav_daily: "Rewards",
+    t_daily_title: "Daily Rewards", t_daily_desc: "Claim your gift!", t_close_daily: "Close",
+    t_day: "Day", alert_low: "Not enough!", timer_wait: "Wait: ", claim: "Claim",
+    withdraw_info: "Withdraw to ID: ", next_reward: "Next in: "
+  }
+};
+
+let state = {
+  balance: parseInt(localStorage.getItem("balance")) || 0,
+  power: parseInt(localStorage.getItem("power")) || 1,
+  playerId: localStorage.getItem("playerId") || "",
+  theme: localStorage.getItem("theme") || "dark",
+  lang: localStorage.getItem("lang") || "ru",
+  cooldownUntil: parseInt(localStorage.getItem("cooldownUntil")) || 0,
+  dailyDay: parseInt(localStorage.getItem("dailyDay")) || 0, // 0-6
+  dailyNextClaim: parseInt(localStorage.getItem("dailyNextClaim")) || 0
+};
+
+let timerInterval, dailyInterval;
+
+function updateUI() {
+  document.getElementById("balance").innerText = state.balance;
+  document.getElementById("powerVal").innerText = state.power;
+  document.getElementById("displayId").innerText = state.playerId || "-";
+  document.getElementById("adminBtnToggle").style.display = (state.playerId === ADMIN_KEY) ? "block" : "none";
+
+  const lang = translations[state.lang];
+  for (let key in lang) {
+    const el = document.getElementById(key);
+    if (el) el.innerText = lang[key];
+  }
+  document.getElementById("body").className = state.theme;
+  renderDailyGrid();
+}
+
+function save() { for (let key in state) localStorage.setItem(key, state[key]); }
+
+/* CLICKER LOGIC */
+document.getElementById("clickBtn").onclick = () => {
+  if (Date.now() < state.cooldownUntil) return;
+  state.balance += state.power;
+  state.cooldownUntil = Date.now() + 5000;
+  save(); updateUI(); startTimer();
+};
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const left = state.cooldownUntil - Date.now();
+    if (left <= 0) { document.getElementById("timer").innerText = ""; clearInterval(timerInterval); return; }
+    document.getElementById("timer").innerText = translations[state.lang].timer_wait + Math.ceil(left/1000) + "s";
+  }, 200);
+}
+
+/* DAILY REWARDS LOGIC */
+function renderDailyGrid() {
+  const grid = document.getElementById("dailyGrid");
+  grid.innerHTML = "";
+  const lang = translations[state.lang];
+  
+  REWARDS.forEach((amt, i) => {
+    const div = document.createElement("div");
+    div.className = `day-card ${i < state.dailyDay ? 'claimed' : ''} ${i === state.dailyDay ? 'active' : ''}`;
+    div.innerHTML = `${lang.t_day} ${i+1}<b>${amt} 💎</b>`;
+    grid.appendChild(div);
+  });
+
+  const btn = document.getElementById("claimBtn");
+  const now = Date.now();
+  if (now < state.dailyNextClaim) {
+    btn.disabled = true;
+    btn.style.opacity = "0.5";
+    startDailyTimer();
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.innerText = lang.claim;
+    document.getElementById("dailyTimer").innerText = "";
+  }
+}
+
+function claimDaily() {
+  if (Date.now() < state.dailyNextClaim) return;
+
+  const reward = REWARDS[state.dailyDay];
+  state.balance += reward;
+  
+  // Следующий день или сброс к первому
+  state.dailyDay = (state.dailyDay + 1) % 7;
+  state.dailyNextClaim = Date.now() + (24 * 60 * 60 * 1000); // +24 часа
+  
+  save();
+  updateUI();
+}
+
+function startDailyTimer() {
+  if (dailyInterval) clearInterval(dailyInterval);
+  dailyInterval = setInterval(() => {
+    const left = state.dailyNextClaim - Date.now();
+    if (left <= 0) { clearInterval(dailyInterval); updateUI(); return; }
+    
+    const hours = Math.floor(left / 3600000);
+    const mins = Math.floor((left % 3600000) / 60000);
+    const secs = Math.floor((left % 60000) / 1000);
+    document.getElementById("dailyTimer").innerText = 
+      translations[state.lang].next_reward + `${hours}h ${mins}m ${secs}s`;
+  }, 1000);
+}
+
+/* GENERAL */
+function saveSettings() {
+  state.playerId = document.getElementById("playerIdInput").value;
+  state.theme = document.getElementById("themeSel").value;
+  state.lang = document.getElementById("langSel").value;
+  save(); updateUI(); toggleMenu();
+}
+function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); }
+function openModal(id) {
+  if (id === 'withdrawModal') {
+    document.getElementById("withdrawConfirmText").innerText = translations[state.lang].withdraw_info + (state.playerId || "?");
+  }
+  document.getElementById(id).style.display = "block";
+}
+function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+function buy(p, c) {
+  if (state.balance < c) { alert(translations[state.lang].alert_low); return; }
+  state.balance -= c; state.power += p; save(); updateUI();
+}
+
+function createWithdraw() {
+  window.open("https://forms.gle/H24uHTgV68MiKC6m9", "_blank");
+  state.balance = 0; save(); updateUI(); closeModal('withdrawModal');
+}
+
+/* ADMIN */
+function adminAddMoney() { state.balance += 1000000; save(); updateUI(); }
+function adminResetCD() { state.cooldownUntil = 0; save(); updateUI(); if (timerInterval) clearInterval(timerInterval); document.getElementById("timer").innerText = ""; }
+function adminSetPower() { let newP = prompt("Power:"); if (newP) { state.power = parseInt(newP); save(); updateUI(); } }
+
+// Init
+document.getElementById("playerIdInput").value = state.playerId;
+document.getElementById("themeSel").value = state.theme;
+document.getElementById("langSel").value = state.lang;
+updateUI();
+if (Date.now() < state.cooldownUntil) startTimer();
+</script>
+</body>
+</html>
