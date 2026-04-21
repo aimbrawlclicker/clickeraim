@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  font-weight:500;
+  transition:.3s;
+  overflow-x:hidden; /* FIX black line */
+}
+
+/* THEMES FIX TEXT VISIBILITY */
+.dark{
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:#fff;
+}
+
+.light{
+  background:#f4f4f4;
+  color:#111;
+}
+
+/* force readable text in light mode */
+.light p,
+.light h1,
+.light h2,
+.light h3,
+.light span{
+  color:#111 !important;
+}
+
+/* header */
+.header{
+  display:flex;
+  justify-content:space-between;
+  padding:15px;
+}
+
+.menuBtn{font-size:26px;cursor:pointer}
+
+/* cards */
+.card{
+  margin:15px auto;
+  width:90%;
+  max-width:420px;
+  padding:18px;
+  border-radius:16px;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
+}
+
+/* buttons */
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  margin-top:10px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+/* ensure visibility in light mode */
+.light button{
+  color:#111;
+}
+
+.click{background:#00c6ff;font-size:20px}
+.shop{background:#ffb347}
+.withdraw{background:#ff4b5c}
+.upg{background:#7c4dff;color:#fff}
+
+/* sidebar */
+.sidebar{
+  position:fixed;
+  top:0;
+  right:-260px;
+  width:240px;
+  height:100%;
+  background:#111827;
+  padding:20px;
+  transition:.3s;
+  z-index:999;
+}
+.sidebar.active{right:0}
+
+/* inputs */
+input{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  margin-top:8px;
+  font-size:14px;
+  outline:none;
+}
+
+/* selects */
+select{
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:none;
+  margin-top:6px;
+}
+
+/* modal */
+.modal{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,.7);
+}
+
+.modal-content{
+  background:#1f2a44;
+  margin:80px auto;
+  padding:20px;
+  width:90%;
+  max-width:400px;
+  border-radius:15px;
+}
+
+/* version */
+.version{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  opacity:.6;
+}
+</style>
+</head>
+
+<body id="body" class="dark">
+
+<div class="header">
+  <div>AimBrawlClicker</div>
+  <div class="menuBtn" onclick="toggleMenu()">☰</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+
+  <h3>⚙ Settings</h3>
+
+  <input id="playerId" placeholder="ID">
+
+  <label>🌙 Theme</label>
+  <select id="themeSel">
+    <option value="dark">Dark</option>
+    <option value="light">Light</option>
+  </select>
+
+  <label>🌍 Language</label>
+  <select id="langSel">
+    <option value="ru">Русский</option>
+    <option value="en">English</option>
+  </select>
+
+  <button class="shop" onclick="saveSettings()">Save</button>
+</div>
+
+<!-- MAIN -->
+<div class="card">
+  <button class="click" id="clickBtn">КЛИК!</button>
+
+  <p>Баланс: <span id="balance">0</span> 💎</p>
+  <p>Сила: <span id="power">1</span></p>
+
+  <p id="timer"></p>
+</div>
+
+<div class="card">
+  <button class="shop" onclick="openShop()" id="shopBtn">Магазин</button>
+</div>
+
+<div class="card">
+  <button class="withdraw" onclick="openWithdraw()" id="withdrawBtn">Вывод</button>
+</div>
+
+<div class="version">v0.5.9</div>
+
+<!-- SHOP -->
+<div class="modal" id="shopModal">
+  <div class="modal-content">
+    <h3 id="shopTitle">🛒 Магазин</h3>
+
+    <button class="upg" onclick="buy(2,100,'u1')" id="up1">+2 (100 💎)</button>
+    <button class="upg" onclick="buy(3,250,'u2')" id="up2">+3 (250 💎)</button>
+    <button class="upg" onclick="buy(5,500,'u3')" id="up3">+5 (500 💎)</button>
+    <button class="upg" onclick="buy(10,1500,'u4')" id="up4">+10 (1500 💎)</button>
+
+    <button onclick="closeShop()">Close</button>
+    <p id="shopMsg"></p>
+  </div>
+</div>
+
+<!-- WITHDRAW -->
+<div class="modal" id="withdrawModal">
+  <div class="modal-content">
+    <h3>⚠ Confirm</h3>
+    <p id="confirmText"></p>
+    <button class="withdraw" onclick="createWithdraw()">Create</button>
+    <button onclick="closeWithdraw()">Cancel</button>
+  </div>
+</div>
+
+<script>
+
+/* DATA */
+let balance=+localStorage.getItem("balance")||0;
+let power=+localStorage.getItem("power")||1;
+let playerId=localStorage.getItem("playerId")||"";
+let theme=localStorage.getItem("theme")||"dark";
+let lang=localStorage.getItem("lang")||"ru";
+let upgrades=JSON.parse(localStorage.getItem("upgrades"))||{};
+
+let cooldownUntil=+localStorage.getItem("cooldownUntil")||0;
+
+document.getElementById("body").className=theme;
+
+/* LANG FIX FULL */
+const t={
+ ru:{
+  shop:"Магазин",
+  withdraw:"Вывод",
+  click:"КЛИК!",
+  shopTitle:"🛒 Магазин",
+  notEnough:"❌ Недостаточно кристаллов"
+ },
+ en:{
+  shop:"Shop",
+  withdraw:"Withdraw",
+  click:"CLICK!",
+  shopTitle:"🛒 Shop",
+  notEnough:"❌ Not enough crystals"
+ }
+};
+
+function applyLang(){
+
+  document.getElementById("clickBtn").innerText=t[lang].click;
+  document.getElementById("shopBtn").innerText=t[lang].shop;
+  document.getElementById("withdrawBtn").innerText=t[lang].withdraw;
+  document.getElementById("shopTitle").innerText=t[lang].shopTitle;
+}
+
+applyLang();
+
+/* SAVE */
+function save(){
+ localStorage.setItem("balance",balance);
+ localStorage.setItem("power",power);
+ localStorage.setItem("playerId",playerId);
+ localStorage.setItem("theme",theme);
+ localStorage.setItem("lang",lang);
+ localStorage.setItem("upgrades",JSON.stringify(upgrades));
+ localStorage.setItem("cooldownUntil",cooldownUntil);
+}
+
+/* UPDATE */
+function update(){
+ document.getElementById("balance").innerText=balance;
+ document.getElementById("power").innerText=power;
+}
+
+/* CLICK + TIMER */
+document.getElementById("clickBtn").onclick=()=>{
+
+ if(Date.now()<cooldownUntil) return;
+
+ balance+=power;
+ save();
+ update();
+
+ cooldownUntil=Date.now()+5000;
+ save();
+
+ startTimer();
+};
+
+function startTimer(){
+ let interval=setInterval(()=>{
+
+  let left=cooldownUntil-Date.now();
+
+  if(left<=0){
+   document.getElementById("timer").innerText="";
+   clearInterval(interval);
+   return;
+  }
+
+  document.getElementById("timer").innerText=Math.ceil(left/1000)+"s";
+
+ },100);
+}
+
+if(Date.now()<cooldownUntil) startTimer();
+
+/* MENU */
+function toggleMenu(){
+ document.getElementById("sidebar").classList.toggle("active");
+}
+
+/* SETTINGS */
+function saveSettings(){
+ playerId=document.getElementById("playerId").value;
+ theme=document.getElementById("themeSel").value;
+ lang=document.getElementById("langSel").value;
+
+ document.getElementById("body").className=theme;
+
+ save();
+ applyLang();
+ update();
+
+ toggleMenu();
+}
+
+/* SHOP FIX + ERROR MSG */
+function openShop(){
+ document.getElementById("shopModal").style.display="block";
+}
+function closeShop(){
+ document.getElementById("shopModal").style.display="none";
+}
+
+function buy(p,c,id){
+
+ if(upgrades[id]) return;
+
+ if(balance<c){
+  document.getElementById("shopMsg").innerText=t[lang].notEnough;
+  return;
+ }
+
+ balance-=c;
+ power+=p;
+ upgrades[id]=true;
+
+ save();
+ update();
+}
+
+/* WITHDRAW */
+function openWithdraw(){
+ if(balance<100) return alert("❌ min 100");
+
+ document.getElementById("confirmText")=
+ "ID: "+playerId+"\n💎 "+balance;
+
+ document.getElementById("withdrawModal").style.display="block";
+}
+
+function closeWithdraw(){
+ document.getElementById("withdrawModal").style.display="none";
+}
+
+function createWithdraw(){
+ balance=0;
+ save();
+ update();
+
+ closeWithdraw();
+
+ window.open("https://forms.gle/H24uHTgV68MiKC6m9","_blank");
+}
+
+update();
+
+</script>
+
+</body>
+</html>
