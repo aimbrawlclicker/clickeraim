@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  transition:.3s;
+  overflow-x:hidden;
+}
+
+/* THEMES */
+.dark{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;}
+.light{background:#f4f4f4;color:#111;}
+
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  padding:15px;
+  align-items:center;
+}
+
+.title{
+  font-weight:800;
+  font-size:20px;
+}
+
+.version{
+  font-size:14px;
+  opacity:.7;
+}
+
+/* SIDEBAR */
+.sidebar{
+  position:fixed;
+  right:-260px;
+  top:0;
+  width:240px;
+  height:100%;
+  background:#111827;
+  padding:20px;
+  transition:.3s;
+}
+.sidebar.active{right:0}
+
+/* TEXT FIX */
+.light .sidebar{color:#000;}
+.dark .sidebar{color:#fff;}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  margin-top:8px;
+}
+
+/* CLICK BUTTON */
+.clickWrap{
+  display:flex;
+  justify-content:center;
+  margin-top:40px;
+}
+
+.clickBtn{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  background:#00c6ff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:.15s;
+}
+
+/* IMAGE */
+#crystalImg{
+  width:80px;
+  height:80px;
+  pointer-events:none;
+  transition:.15s;
+}
+
+/* CLICK ANIM */
+.clickBtn:active{
+  transform:scale(0.9);
+}
+.clickBtn:active #crystalImg{
+  transform:scale(0.85);
+}
+
+/* 💥 CRYSTAL FX */
+.crystal-fx{
+  position:absolute;
+  width:30px;
+  height:30px;
+  pointer-events:none;
+  animation:fly 0.8s ease-out forwards;
+}
+
+@keyframes fly{
+  0%{transform:translate(0,0) scale(1);opacity:1;}
+  100%{transform:translate(var(--x), var(--y)) scale(0.5);opacity:0;}
+}
+
+/* BOTTOM MENU */
+.bottom{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  display:flex;
+}
+
+.bottom button{
+  flex:1;
+  padding:18px;
+  border:none;
+  font-size:16px;
+  border-radius:20px 20px 0 0;
+}
+
+/* CARD */
+.card{
+  text-align:center;
+  margin-top:10px;
+}
+
+</style>
+</head>
+
+<body id="body" class="dark">
+
+<div class="header">
+  <div class="title">AimBrawlClicker <span class="version">v0.6</span></div>
+  <div onclick="toggleMenu()">☰</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+
+<h3>⚙ Settings</h3>
+
+<input id="playerId" placeholder="ID">
+
+<label>🌙 Theme</label>
+<select id="themeSel">
+<option value="dark">Dark</option>
+<option value="light">Light</option>
+</select>
+
+<label>🌍 Language</label>
+<select id="langSel">
+<option value="ru">Русский</option>
+<option value="en">English</option>
+</select>
+
+<button onclick="saveSettings()">Save</button>
+
+</div>
+
+<!-- MAIN -->
+<div class="card">
+  <p>👤 ID: <span id="showId">—</span></p>
+  <p>💎 <span id="balance">0</span></p>
+  <p>⚡ <span id="power">1</span></p>
+  <p id="timer"></p>
+</div>
+
+<div class="clickWrap">
+  <div class="clickBtn" id="clickBtn">
+    <img src="crystal.png" id="crystalImg">
+  </div>
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom">
+  <button onclick="openShop()">🛒</button>
+  <button onclick="openWithdraw()">💸</button>
+</div>
+
+<script>
+
+/* DATA */
+let balance=+localStorage.getItem("balance")||0;
+let power=+localStorage.getItem("power")||1;
+
+/* FIX ID */
+let playerId = localStorage.getItem("playerId");
+if(playerId === null){
+  playerId = "";
+  localStorage.setItem("playerId","");
+}
+
+let theme=localStorage.getItem("theme")||"dark";
+let lang=localStorage.getItem("lang")||"ru";
+
+let cooldownUntil=+localStorage.getItem("cooldownUntil")||0;
+
+document.getElementById("body").className=theme;
+
+/* INIT */
+document.getElementById("playerId").value=playerId;
+
+/* SAVE */
+function save(){
+ localStorage.setItem("balance",balance);
+ localStorage.setItem("power",power);
+ localStorage.setItem("playerId",playerId);
+ localStorage.setItem("theme",theme);
+ localStorage.setItem("lang",lang);
+ localStorage.setItem("cooldownUntil",cooldownUntil);
+}
+
+/* UPDATE */
+function update(){
+ document.getElementById("balance").innerText=balance;
+ document.getElementById("power").innerText=power;
+ document.getElementById("showId").innerText=playerId||"—";
+}
+
+/* 💥 FX FUNCTION */
+function spawnCrystals(){
+
+  let btn=document.getElementById("clickBtn");
+  let rect=btn.getBoundingClientRect();
+
+  for(let i=0;i<6;i++){
+
+    let el=document.createElement("img");
+    el.src="crystal.png";
+    el.className="crystal-fx";
+
+    let x=(Math.random()*200-100)+"px";
+    let y=(Math.random()*-200)+"px";
+
+    el.style.left=rect.left+rect.width/2+"px";
+    el.style.top=rect.top+rect.height/2+"px";
+
+    el.style.setProperty("--x",x);
+    el.style.setProperty("--y",y);
+
+    document.body.appendChild(el);
+
+    setTimeout(()=>el.remove(),800);
+  }
+}
+
+/* CLICK */
+document.getElementById("clickBtn").onclick=()=>{
+
+ if(Date.now()<cooldownUntil) return;
+
+ spawnCrystals(); // 💥 эффект
+
+ balance+=power;
+ cooldownUntil=Date.now()+5000;
+
+ save();
+ update();
+ startTimer();
+};
+
+function startTimer(){
+ let interval=setInterval(()=>{
+
+  let left=cooldownUntil-Date.now();
+
+  if(left<=0){
+    document.getElementById("timer").innerText="";
+    clearInterval(interval);
+    return;
+  }
+
+  document.getElementById("timer").innerText=Math.ceil(left/1000)+"s";
+
+ },100);
+}
+
+if(Date.now()<cooldownUntil) startTimer();
+
+/* SETTINGS */
+function saveSettings(){
+ playerId=document.getElementById("playerId").value;
+ localStorage.setItem("playerId",playerId);
+
+ theme=document.getElementById("themeSel").value;
+ lang=document.getElementById("langSel").value;
+
+ document.getElementById("body").className=theme;
+
+ save();
+ update();
+ toggleMenu();
+}
+
+/* MENU */
+function toggleMenu(){
+ document.getElementById("sidebar").classList.toggle("active");
+}
+
+/* STUB */
+function openShop(){ alert("shop"); }
+function openWithdraw(){ alert("withdraw"); }
+
+update();
+
+</script>
+
+</body>
+</html>
