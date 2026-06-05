@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AimBrawlClicker v0.7.2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #00c6ff;
+  --gold: #eab308;
+  --bg: #0f172a;
+  --text: #ffffff;
+  --card-bg: #1e293b;
+  --input-bg: #0f172a;
+  --input-text: #ffffff;
+  --rare: #4ade80;
+  --super-rare: #60a5fa;
+  --epic: #a855f7;
+  --mythic: #f43f5e;
+  --legendary: #fbbf24;
+  --ultra: #ec4899;
+  --admin-neon: #00ffcc;
+}
+
+.light { --bg: #f1f5f9; --text: #1e293b; --card-bg: #ffffff; --input-bg: #e2e8f0; --input-text: #1e293b; }
+
+body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; user-select: none; overflow-x: hidden; }
+.header { display: flex; justify-content: space-between; padding: 20px; font-weight: 800; }
+.version { font-size: 0.8rem; opacity: 0.5; margin-left: 5px; }
+
+/* SIDEBAR */
+.sidebar { position: fixed; right: -280px; top: 0; width: 260px; height: 100%; background: var(--card-bg); padding: 30px 20px; transition: 0.3s; z-index: 1000; box-shadow: -5px 0 15px rgba(0,0,0,0.2); }
+.sidebar.active { right: 0; }
+input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); margin: 10px 0 20px; background: var(--input-bg); color: var(--input-text); box-sizing: border-box; }
+.btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 700; cursor: pointer; }
+
+#adminLink { display: none; margin-top: 15px; color: var(--admin-neon); font-weight: 800; cursor: pointer; text-align: center; border: 1px solid var(--admin-neon); padding: 8px; border-radius: 10px; text-shadow: 0 0 5px var(--admin-neon); }
+
+/* КАРТОЧКИ И БАЛАНС */
+.card { text-align: center; margin: 15px; padding: 20px; background: var(--card-bg); border-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.balances { display: flex; justify-content: space-around; margin: 10px 0; }
+.stat-box { display: flex; justify-content: space-around; margin-top: 15px; font-size: 0.9rem; opacity: 0.9; }
+
+/* КЛИКЕРЫ */
+.click-container { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 10px; }
+.clickBtn { 
+    width: 150px; height: 150px; border-radius: 50%; 
+    background: radial-gradient(circle, var(--gold) 0%, #d97706 100%); 
+    display: flex; align-items: center; justify-content: center; cursor: pointer; 
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.4); transition: 0.1s;
+}
+.clickBtn:active { transform: scale(0.92); }
+
+.super-click-btn {
+    background: linear-gradient(45deg, #ec4899, #8b5cf6);
+    color: white; border: none; padding: 12px 28px; border-radius: 50px;
+    font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+.super-click-btn:disabled { background: #475569; opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
+/* БАННЕР СКИДКИ */
+.discount-banner { background: rgba(234, 179, 8, 0.15); border: 1px dashed var(--gold); padding: 8px; border-radius: 12px; margin-bottom: 15px; font-size: 0.85rem; font-weight: 600; color: var(--gold); }
+
+/* SHOP */
+.shop-item { background: var(--input-bg); padding: 15px; border-radius: 20px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; border-left: 5px solid gray; text-align: left; }
+.shop-item.rare { border-color: var(--rare); }
+.shop-item.super-rare { border-color: var(--super-rare); }
+.shop-item.epic { border-color: var(--epic); }
+.shop-item.mythic { border-color: var(--mythic); }
+.shop-item.legendary { border-color: var(--legendary); }
+.shop-item.ultra { border-color: var(--ultra); background: linear-gradient(90deg, var(--input-bg) 0%, rgba(236,72,153,0.05) 100%); }
+.shop-item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.shop-buttons { display: flex; gap: 8px; }
+.shop-buttons button { flex: 1; padding: 10px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 0.8rem; }
+.btn-coin { background: #334155; color: var(--gold); border: 1px solid var(--gold) !important; }
+.btn-gem { background: #334155; color: var(--primary); border: 1px solid var(--primary) !important; }
+.shop-buttons button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* НИЖНЯЯ ПАНЕЛЬ И МОДАЛКИ */
+.bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; background: var(--card-bg); display: flex; justify-content: space-around; padding: 12px 5px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 900; }
+.nav-item { background: none; border: none; color: var(--text); display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 600; cursor: pointer; flex: 1; }
+.nav-item span { font-size: 20px; margin-bottom: 4px; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; }
+.modal-content { background: var(--card-bg); padding: 25px; position: absolute; bottom: 0; width: 100%; box-sizing: border-box; border-radius: 35px 35px 0 0; text-align: center; color: var(--text); max-height: 85vh; overflow-y: auto; }
+
+.day-card { background: var(--input-bg); padding: 10px 5px; border-radius: 12px; font-size: 0.75rem; border: 1px solid transparent; text-align: center; }
+.day-card.active { border-color: var(--primary); background: rgba(0,198,255,0.1); font-weight: 700; }
+.day-card.claimed { opacity: 0.4; }
+
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+.admin-btn { background: none; border: 1px solid var(--admin-neon); color: var(--admin-neon); padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.75rem; }
+
+#timer, #superTimer, #dailyTimer { color: #f43f5e; font-weight: 800; font-size: 0.8rem; height: 15px; margin: 5px 0; }
+.exch-btn { background: rgba(0, 198, 255, 0.1); border: 1px solid var(--primary); color: var(--primary); padding: 6px 12px; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 0.8rem; margin-top: 5px; }
+</style>
+</head>
+<body id="body">
+
+<div class="header">
+  <div>AimBrawl <span style="color:var(--gold)">Clicker</span><span class="version">v0.7.2</span></div>
+  <div style="cursor:pointer; font-size:24px; padding: 0 10px;" onclick="window.toggleMenu()">☰</div>
+</div>
+
+<!-- SIDEBAR (SETTINGS) -->
+<div class="sidebar" id="sidebar">
+  <h3 id="t_settings">Настройки</h3>
+  <label id="t_your_id">Ваш ID</label>
+  <input id="playerIdInput" placeholder="ID..." oninput="window.checkAdminField()">
+  <div id="adminLink" onclick="window.closeSidebarAndOpenAdmin()">⚡ DEV PANEL ⚡</div>
+  <label id="t_theme">Тема</label>
+  <select id="themeSel" onchange="window.applySettings()"><option value="dark">Dark</option><option value="light">Light</option></select>
+  <label id="t_lang">Язык</label>
+  <select id="langSel" onchange="window.applySettings()"><option value="ru">Русский</option><option value="en">English</option></select>
+  <button class="btn-main" onclick="window.toggleMenu()" id="t_save">Закрыть</button>
+</div>
+
+<!-- MAIN STATUS CARD -->
+<div class="card">
+  <div style="opacity: 0.6; font-size: 0.8rem; display: flex; justify-content: space-between; padding: 0 10px;">
+    <span>ID: <span id="displayId">-</span></span>
+    <span><span id="t_total_clicks">Всего кликов</span>: <b id="totalClicksVal">0</b></span>
+  </div>
+  
+  <div class="balances">
+    <div>
+      <div style="font-size: 0.8rem; opacity: 0.7;">🪙 <span id="t_coins_lbl">Монеты</span></div>
+      <h2 style="margin: 5px 0; color: var(--gold)" id="balanceCoins">0</h2>
+    </div>
+    <div>
+      <div style="font-size: 0.8rem; opacity: 0.7;">💎 <span id="t_gems_lbl">Кристаллы</span></div>
+      <h2 style="margin: 5px 0; color: var(--primary)" id="balanceGems">0.0</h2>
+    </div>
+  </div>
+
+  <button class="exch-btn" onclick="window.exchangeCoins()" id="t_exch_btn">🪙 1000 → 💎 1</button>
+
+  <div class="stat-box">
+    <div><span id="t_power">Сила</span>: <b id="powerVal">1</b></div>
+    <div><span id="t_cooldown">Задержка</span>: <b id="cdVal">0</b>с</div>
+  </div>
+  <p id="timer"></p>
+</div>
+
+<!-- CLICKER AREA -->
+<div class="click-container">
+  <div class="clickBtn" id="clickBtn">
+    <span style="font-size: 50px;">🪙</span>
+  </div>
+  <button class="super-click-btn" id="superBtn" onclick="window.superClick()">SUPER CLICK ⚡</button>
+  <p id="superTimer"></p>
+</div>
+
+<!-- MODAL: DAILY REWARDS -->
+<div class="modal" id="dailyModal">
+  <div class="modal-content">
+    <h3 id="t_daily_title">Ежедневные Награды</h3>
+    <div id="dailyGrid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:15px 0;"></div>
+    <p id="dailyTimer"></p>
+    <button class="btn-main" id="claimBtn" onclick="window.claimDaily()">Забрать</button>
+    <br>
+    <button onclick="window.closeModal('dailyModal')" style="background:none; border:none; color:var(--text); margin-top:15px;" id="t_close_daily">Закрыть</button>
+  </div>
+</div>
+
+<!-- MODAL: SHOP -->
+<div class="modal" id="shopModal">
+  <div class="modal-content">
+    <h3 id="t_shop_title">Магазин Редкостей</h3>
+    <div class="discount-banner" id="discountBanner">Скидка сегодня: 0%</div>
+    <div id="shopList"></div>
+    <hr style="opacity: 0.1; margin: 15px 0;">
+    <div class="shop-item" style="border-left: 5px solid var(--ultra)">
+       <div class="shop-item-header">
+         <div><b id="t_super_up">Улучшение супер-клика</b><br><small id="t_super_desc">24ч → 12ч</small></div>
+       </div>
+       <div class="shop-buttons">
+         <button class="btn-gem" id="buySuperUpgrade" onclick="window.buySuperCD()">💎 100</button>
+       </div>
+    </div>
+    <button onclick="window.closeModal('shopModal')" style="background:none; border:none; color:var(--primary); margin-top:10px;" id="t_close_shop">Закрыть</button>
+  </div>
+</div>
+
+<!-- MODAL: WITHDRAW -->
+<div class="modal" id="withdrawModal">
+  <div class="modal-content">
+    <h3 id="t_withdraw_title">Вывод Средств</h3>
+    <p id="withdrawConfirmText" style="font-size:0.9rem; margin:15px 0; white-space: pre-line;"></p>
+    <button class="btn-main" onclick="window.createWithdraw()" id="t_req_btn">Создать заявку</button>
+    <br>
+    <button onclick="window.closeModal('withdrawModal')" style="opacity:0.5; background:none; border:none; color:var(--text); margin-top:15px;" id="t_cancel">Отмена</button>
+  </div>
+</div>
+
+<!-- MODAL: ADMIN PANEL -->
+<div class="modal" id="adminModal">
+  <div class="modal-content" style="border: 2px solid var(--admin-neon); background: #0b1329;">
+    <h2 style="color: var(--admin-neon); margin-top:0;">DEV PANEL v0.7.2</h2>
+    <div class="admin-grid">
+      <button class="admin-btn" onclick="window.adminAction('m_plus')">+100k Монет</button>
+      <button class="admin-btn" onclick="window.adminAction('g_plus')">+100 Кристаллов</button>
+      <button class="admin-btn" onclick="window.adminAction('m_minus')">-1M Монет</button>
+      <button class="admin-btn" onclick="window.adminAction('g_minus')">-100 Кристаллов</button>
+      <button class="admin-btn" onclick="window.adminAction('reset_cd')">Снять Кулдаун</button>
+      <button class="admin-btn" onclick="window.adminAction('reset_super')">Снять С-Клик</button>
+      <button class="admin-btn" style="grid-column: span 2" onclick="window.adminAction('add_days')">+10 Дней Серии</button>
+    </div>
+    <button onclick="window.closeModal('adminModal')" style="color:white; background:none; border:none; opacity:0.7;">CLOSE</button>
+  </div>
+</div>
+
+<!-- BOTTOM NAVIGATION -->
+<div class="bottom-nav">
+  <button class="nav-item" onclick="window.openModal('shopModal')"><span>🛒</span><span id="t_nav_shop">Магазин</span></button>
+  <button class="nav-item" onclick="window.openModal('dailyModal')"><span>🎁</span><span id="t_nav_daily">Награды</span></button>
+  <button class="nav-item" onclick="window.openModal('withdrawModal')"><span>💸</span><span id="t_nav_withdraw">Вывод</span></button>
+</div>
+
+<script>
+const ADMIN_SECRET = "DEV67";
+
+const WEEKLY_REWARDS = [
+  { type: 'coins', amt: 100 }, { type: 'coins', amt: 250 }, { type: 'gems', amt: 3 },
+  { type: 'coins', amt: 500 }, { type: 'coins', amt: 1500 }, { type: 'coins', amt: 3000 }, { type: 'gems', amt: 5 }
+];
+
+const translations = {
+  ru: {
+    t_settings: "Настройки", t_your_id: "Ваш ID", t_theme: "Тема", t_lang: "Язык", t_save: "Закрыть",
+    t_power: "Сила", t_cooldown: "Задержка", t_total_clicks: "Всего кликов",
+    t_coins_lbl: "Монеты", t_gems_lbl: "Кристаллы", t_exch_btn: "🪙 1000 → 💎 1",
+    t_shop_title: "Магазин Редкостей", t_close_shop: "Закрыть", t_super_up: "Улучшение супер-клика", t_super_desc: "24ч → 12ч",
+    t_withdraw_title: "Вывод Средств", t_req_btn: "Создать заявку", t_cancel: "Отмена",
+    t_nav_shop: "Магазин", t_nav_daily: "Награды", t_nav_withdraw: "Вывод",
+    t_daily_title: "Ежедневные Награды", t_close_daily: "Закрыть", t_day: "День", t_claim: "Забрать",
+    wait: "Жди: ", jackpot: "СУПЕР-КЛИК: +1000 Монет! 🪙", low_money: "Недостаточно средств!", bought: "Куплено",
+    withdraw_to: "Вывод на ID: ", next: "След. награда: ", discount: "Скидка сегодня: ",
+    locked_ultra: "Заблокировано! Нужно 1,000,000 кликов (У вас: ",
+    withdraw_error: "Минимальный вывод от 30 кристаллов! У вас: "
+  },
+  en: {
+    t_settings: "Settings", t_your_id: "Your ID", t_theme: "Theme", t_lang: "Language", t_save: "Close",
+    t_power: "Power", t_cooldown: "Cooldown", t_total_clicks: "Total Clicks",
+    t_coins_lbl: "Coins", t_gems_lbl: "Gems", t_exch_btn: "🪙 1000 → 💎 1",
+    t_shop_title: "Rarity Shop", t_close_shop: "Close", t_super_up: "Super-click Upgrade", t_super_desc: "24h → 12h",
+    t_withdraw_title: "Withdrawal", t_req_btn: "Request", t_cancel: "Cancel",
+    t_nav_shop: "Shop", t_nav_daily: "Daily", t_nav_withdraw: "Payout",
+    t_daily_title: "Daily Rewards", t_close_daily: "Close", t_day: "Day", t_claim: "Claim",
+    wait: "Wait: ", jackpot: "SUPER-CLICK: +1000 Coins! 🪙", low_money: "Not enough resources!", bought: "Owned",
+    withdraw_to: "Withdraw to ID: ", next: "Next reward: ", discount: "Today's Discount: ",
+    locked_ultra: "Locked! Requires 1,000,000 clicks (You have: ",
+    withdraw_error: "Minimum withdrawal is 30 gems! You have: "
+  }
+};
+
+const SHOP_ITEMS = [
+  { id: 'u1', rarity: 'rare', name: '+1 Click', coinPrice: 1000, gemPrice: 2, power: 1, cd: 0 },
+  { id: 'u2', rarity: 'super-rare', name: '+2 Click', coinPrice: 5000, gemPrice: 10, power: 2, cd: 0 },
+  { id: 'u3', rarity: 'epic', name: '+5 Click', coinPrice: 25000, gemPrice: 50, power: 5, cd: 0 },
+  { id: 'u4', rarity: 'mythic', name: '+10 Click', coinPrice: 100000, gemPrice: 250, power: 10, cd: 0 },
+  { id: 'u5', rarity: 'legendary', name: '+25 Click', coinPrice: 500000, gemPrice: 1500, power: 25, cd: 0 },
+  { id: 'u6', rarity: 'ultra', name: '+50 Click (УЛЬТРА)', coinPrice: 10000000, gemPrice: null, power: 50, cd: 0, reqClicks: 1000000 }
+];
+
+// Безопасные парсеры хранилища
+function sInt(k, d) { try { let v = localStorage.getItem(k); if(v===null||v===undefined||v==="")return d; let p=parseInt(v,10); return isNaN(p)?d:p; } catch(e) { return d; } }
+function sFloat(k, d) { try { let v = localStorage.getItem(k); if(v===null||v===undefined||v==="")return d; let p=parseFloat(v); return isNaN(p)?d:p; } catch(e) { return d; } }
+function sStr(k, d) { try { let v = localStorage.getItem(k); return (v===null||v===undefined)?d:String(v); } catch(e) { return d; } }
+function sArr(k, d) { try { let v = localStorage.getItem(k); if(!v) return d; let p = JSON.parse(v); return Array.isArray(p) ? p : d; } catch(e) { return d; } }
+
+let state = {
+  coins: sInt("abc_coins", 0),
+  gems: sFloat("abc_gems", 0.0),
+  power: sInt("abc_power", 1),
+  currentCD: sInt("abc_ccd", 0), // Начальная задержка установлена в 0
+  totalClicks: sInt("abc_tc", 0),
+  playerId: sStr("abc_pid", ""),
+  theme: sStr("abc_th", "dark"),
+  lang: sStr("abc_ln", "ru"),
+  cooldownUntil: sInt("abc_cu", 0),
+  superNextClaim: sInt("abc_snc", 0),
+  superInterval: sInt("abc_si", 86400000),
+  dailyDay: sInt("abc_dd", 0),
+  dailyNext: sInt("abc_dn", 0),
+  dailyLastClaimed: sInt("abc_dlc", 0),
+  discount: sInt("abc_disc", 0),
+  discountDayStamp: sInt("abc_dds", 0),
+  purchased: sArr("abc_inv", [])
+};
+
+// Защита от критического зависания кулдауна из старых версий
+if (state.cooldownUntil > Date.now() + 3600000) { state.cooldownUntil = 0; }
+if (state.lang !== "ru" && state.lang !== "en") state.lang = "ru";
+
+let timers = { app: null };
+
+function save() {
+  try {
+    localStorage.setItem("abc_coins", state.coins);
+    localStorage.setItem("abc_gems", state.gems.toFixed(1));
+    localStorage.setItem("abc_power", state.power);
+    localStorage.setItem("abc_ccd", state.currentCD);
+    localStorage.setItem("abc_tc", state.totalClicks);
+    localStorage.setItem("abc_pid", state.playerId);
+    localStorage.setItem("abc_th", state.theme);
+    localStorage.setItem("abc_ln", state.lang);
+    localStorage.setItem("abc_cu", state.cooldownUntil);
+    localStorage.setItem("abc_snc", state.superNextClaim);
+    localStorage.setItem("abc_si", state.superInterval);
+    localStorage.setItem("abc_dd", state.dailyDay);
+    localStorage.setItem("abc_dn", state.dailyNext);
+    localStorage.setItem("abc_dlc", state.dailyLastClaimed);
+    localStorage.setItem("abc_disc", state.discount);
+    localStorage.setItem("abc_dds", state.discountDayStamp);
+    localStorage.setItem("abc_inv", JSON.stringify(state.purchased));
+  } catch(e) {}
+}
+
+function updateDiscountSystem() {
+  try {
+    const currentDayStr = Math.floor(Date.now() / 86400000);
+    if (state.discountDayStamp !== currentDayStr) {
+      state.discountDayStamp = currentDayStr;
+      let r = Math.random() * 100;
+      if (r < 65.9) state.discount = 0;
+      else if (r < 85.9) state.discount = 5;
+      else if (r < 93.4) state.discount = 15;
+      else if (r < 96.4) state.discount = 25;
+      else if (r < 97.4) state.discount = 50;
+      else if (r < 97.9) state.discount = 75;
+      else state.discount = 100;
+      save();
+    }
+  } catch(e){}
+}
+
+function checkDailyStreakReset() {
+  try {
+    if (state.dailyLastClaimed > 0) {
+      let diff = Date.now() - state.dailyLastClaimed;
+      if (diff > 172800000) { state.dailyDay = 0; state.dailyNext = 0; save(); }
+    }
+  } catch(e){}
+}
+
+function updateUI() {
+  try {
+    const L = translations[state.lang] || translations.ru;
+    
+    let elCoins = document.getElementById("balanceCoins"); if(elCoins) elCoins.innerText = state.coins.toLocaleString();
+    let elGems = document.getElementById("balanceGems"); if(elGems) elGems.innerText = state.gems.toFixed(1);
+    let elPower = document.getElementById("powerVal"); if(elPower) elPower.innerText = state.power;
+    let elCd = document.getElementById("cdVal"); if(elCd) elCd.innerText = (state.currentCD / 1000).toFixed(1);
+    let elTc = document.getElementById("totalClicksVal"); if(elTc) elTc.innerText = state.totalClicks.toLocaleString();
+    let elPid = document.getElementById("displayId"); if(elPid) elPid.innerText = state.playerId || "-";
+    
+    let elBody = document.getElementById("body"); if(elBody) elBody.className = state.theme;
+    
+    window.checkAdminField();
+
+    for (let key in L) {
+      let el = document.getElementById(key); if (el) el.innerText = L[key];
+    }
+
+    let elDisc = document.getElementById("discountBanner");
+    if(elDisc) elDisc.innerText = (L.discount || "Скидка: ") + state.discount + "%";
+    
+    renderShop();
+    renderDailyGrid();
+  } catch(e) {}
+}
+
+function renderShop() {
+  try {
+    const L = translations[state.lang] || translations.ru;
+    const container = document.getElementById("shopList");
+    if(!container) return;
+    container.innerHTML = "";
+
+    SHOP_ITEMS.forEach(item => {
+      const isBought = state.purchased.includes(item.id);
+      const isUltraLocked = it
